@@ -30,9 +30,9 @@ WSGI_APPLICATION = 'hydrology.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'test_database_name',
-        'USER': 'test_database_user',
-        'PASSWORD': 'test_database_password',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'github_actions',
         'HOST': 'localhost',
         'PORT': '5432',
     }
