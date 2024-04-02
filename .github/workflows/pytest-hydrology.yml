@@ -1,4 +1,4 @@
-name: Python Package
+name: pytest-hydrology
 
 on:
   push:
@@ -24,4 +24,4 @@ jobs:
     - name: Run Tests
       run: |
         pip install pytest-django
-        pytest
+        python -m pytest
