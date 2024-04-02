@@ -1,7 +1,7 @@
 # The Hydrata Hydrology App
 
 
-![Actions Status](https://github.com/Hydrata/hydrology/workflows/pytest-hydrology/badge.svg)
+![Actions Status](https://github.com/Hydrata/hydrology/workflows/pytest-hydrology/badge.svg?branch=4.1.x)
 
 This app contains the basic hydrology functions used in hydrata.com
 
