@@ -85,7 +85,7 @@ class IDFTable(models.Model):
     percent_0_05 = JSONField("0.05%", blank=True, null=True)  # 2000yr ARI
     percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         recurrance_intervals = [
             self.ey_12,
             self.ey_6,
@@ -118,8 +118,10 @@ class IDFTable(models.Model):
                 duration_lengths.append(len(recurrance_interval))
 
         if len(set(duration_lengths)) > 1:
-            raise ValidationError("All durations must be arrays of the same length.")
+            raise ValidationError("All durations must be lists of the same length.")
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -132,10 +134,32 @@ class IDFTable(models.Model):
     def aep_from_ari(ari):
         return 100 * (1 - math.exp((-1/ari)))
 
-
     def __str__(self):
         return self.location_name
 
     class Meta:
         verbose_name = "IDF Table"
         verbose_name_plural = "IDF Tables"
+
+
+class TemporalPattern(models.Model):
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_created', verbose_name="Created by")
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_updated', verbose_name="Updated by")
+    created_at = models.DateTimeField("Created at", auto_now_add=True)
+    updated_at = models.DateTimeField("Updated at", auto_now=True)
+    name = models.CharField(max_length=500)
+    source = models.CharField(max_length=500)
+    notes = models.TextField(blank=True, null=True)
+    pattern = JSONField("Pattern", blank=True, null=True)
+
+    def clean(self):
+        if not sum(self.pattern) == 1:
+            raise ValidationError("The temporal pattern must sum to 1. For example: [0.3, 0.4, 0.3, 0.2]")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Temporal Pattern"
+        verbose_name_plural = "Temporal Patterns"
