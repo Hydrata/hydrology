@@ -31,7 +31,11 @@ jobs:
         python-version: "3.10"
     - name: Install dependencies
       run: |
+        sudo apt-add-repository ppa:ubuntugis/ubuntugis-unstable
+        sudo apt-get update
+        sudo apt-get install gdal-bin libgdal-dev
         python -m pip install --upgrade pip
+        pip install GDAL==`gdal-config --version`
         pip install -r requirements_test.txt
     - name: Run Tests
       env:
