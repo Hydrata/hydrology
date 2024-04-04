@@ -29,7 +29,7 @@ ROOT_URLCONF = 'hydrology.urls'
 WSGI_APPLICATION = 'hydrology.wsgi.application'
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': 'github_actions',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
