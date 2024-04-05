@@ -22,23 +22,37 @@ class TestTimeSeriesModel:
         ]
 
     def test_model_creation_with_valid_data(self):
-        time_series = TimeSeries.objects.create(data=self.valid_time_data, timezone='UTC')
+        time_series = TimeSeries.objects.create(
+            name='valid TimeSeries Name',
+            data=self.valid_time_data,
+            timezone='UTC'
+        )
         assert time_series is not None
         assert time_series.data == self.valid_time_data
         assert time_series.timezone == 'UTC'
 
     def test_model_with_invalid_timestamps(self):
-        time_series = TimeSeries(data=self.invalid_time_data, timezone='UTC')
         with pytest.raises(ValidationError):
-            time_series.save()
+            time_series = TimeSeries.objects.create(
+                name='valid TimeSeries Name',
+                data=self.invalid_time_data,
+                timezone='UTC'
+            )
 
     def test_model_with_invalid_timezone(self):
-        time_series = TimeSeries(data=self.valid_time_data, timezone='InvalidTimezone')
         with pytest.raises(ValidationError):
-            time_series.save()
+            time_series = TimeSeries.objects.create(
+                name='valid TimeSeries Name',
+                data=self.valid_time_data,
+                timezone='InvalidTimezone'
+            )
 
     def test_data_with_datetimes(self):
-        time_series = TimeSeries.objects.create(data=self.valid_time_data, timezone='UTC')
+        time_series = TimeSeries.objects.create(
+            name='valid TimeSeries Name',
+            data=self.valid_time_data,
+            timezone='UTC'
+        )
         expected_data = [
             {'ts': datetime.datetime(2022, 6, 1, 0, 0, tzinfo=pytz.UTC), 'value': 10},
             {'ts': datetime.datetime(2022, 7, 1, 0, 0, tzinfo=pytz.UTC), 'value': 20},

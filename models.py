@@ -1,3 +1,8 @@
+import copy
+import pytz
+import math
+import matplotlib.pyplot as plt
+
 from django.contrib.gis.db.models import PointField
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -5,8 +10,9 @@ from django.db import models
 from django.db.models import JSONField
 from django.contrib.postgres.indexes import GinIndex
 from datetime import datetime
-import pytz
-import math
+from django.core.files import File
+from io import BytesIO
+
 User = get_user_model()
 
 
@@ -15,8 +21,13 @@ class TimeSeries(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
-    data = JSONField()
+    name = models.CharField(max_length=500)
+    location_name = models.CharField(max_length=500, blank=True, null=True)
+    source = models.CharField(max_length=500, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     timezone = models.CharField(max_length=50, default='UTC', choices=[(tz, tz) for tz in pytz.all_timezones])
+    data = JSONField(default=list(), blank=True, null=True)
+    chart = models.ImageField(upload_to='timeseries/chart/', blank=True, null=True)
 
     def clean(self):
         required_keys = {'ts', 'value'}
@@ -35,6 +46,7 @@ class TimeSeries(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
+        self.create_chart()
         super().save(*args, **kwargs)
 
     @property
@@ -47,6 +59,22 @@ class TimeSeries(models.Model):
             data_with_datetimes.append(data_point_copy)
         return data_with_datetimes
 
+    def create_chart(self):
+        filename = f'{self.name}.png'
+        timestamps = [item['ts'] for item in self.data]
+        values = [item['value'] for item in self.data]
+        plt.bar(timestamps, values)
+        plt.xticks(rotation=45)
+        plt.tight_layout()  # Adjust layout to prevent cut-off
+
+        # Save it to a BytesIO object
+        file_buffer = BytesIO()
+        plt.savefig(file_buffer, format='png')
+        file_buffer.seek(0)
+
+        chart_image = File(file_buffer, name=filename)
+        self.chart.save(filename, chart_image)
+
     class Meta:
         indexes = [
             GinIndex(fields=['data']),
@@ -55,6 +83,20 @@ class TimeSeries(models.Model):
 
 
 class IDFTable(models.Model):
+    MM = 'mm'
+    CM = 'cm'
+    IN = 'in'
+    UNIT_CHOICES = [
+        (MM, 'Millimeters'),
+        (CM, 'Centimeters'),
+        (IN, 'Inches'),
+    ]
+    UNIT_CONVERSIONS = {
+        MM: 1,
+        CM: 10,
+        IN: 25.4,
+    }
+
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_created', verbose_name="Created by")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
@@ -83,42 +125,73 @@ class IDFTable(models.Model):
     percent_0_2 = JSONField("0.2%", blank=True, null=True)  # 500yr ARI
     percent_0_01 = JSONField("0.01%", blank=True, null=True)  # 1000yr ARI
     percent_0_05 = JSONField("0.05%", blank=True, null=True)  # 2000yr ARI
-    percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI
+    percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI,
+    original_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm',)
+    saved_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm',)
+    conversion_complete = models.BooleanField(default=False)
+    chart = models.ImageField(upload_to='idftable/chart/', blank=True, null=True)
+
+    def convert_to_mm(self, value):
+        conversion_factor = self.UNIT_CONVERSIONS[self.original_units]
+        return value * conversion_factor
+    
+    @property
+    def frequency_field_labels(self):
+        return [
+            'ey_12',
+            'ey_6',
+            'ey_4',
+            'ey_3',
+            'ey_2',
+            'ey_1',
+            'percent_50',
+            'ey_0_5',
+            'percent_20',
+            'ey_0_2',
+            'percent_10',
+            'percent_5',
+            'percent_4',
+            'percent_2',
+            'percent_1',
+            'percent_0_5',
+            'percent_0_2',
+            'percent_0_01',
+            'percent_0_05',
+            'percent_0_002',
+        ]
+
+    @property
+    def frequencies(self):
+        frequencies = dict()
+        for field_label in self.frequency_field_labels:
+            frequencies.update({field_label: getattr(self, field_label)})
+        return frequencies
+
+    @property
+    def frequencies_filtered(self):
+        frequencies_filtered = copy.deepcopy(self.frequencies)
+        for label, frequency in self.frequencies.items():
+            if frequency is not None:
+                if not isinstance(frequency, list):
+                    raise ValidationError(f"JSON field {label} does not contain a list.")
+            else:
+                del frequencies_filtered[label]
+        return frequencies_filtered
 
     def clean(self):
-        recurrance_intervals = [
-            self.ey_12,
-            self.ey_6,
-            self.ey_4,
-            self.ey_3,
-            self.ey_2,
-            self.ey_1,
-            self.percent_50,
-            self.ey_0_5,
-            self.percent_20,
-            self.ey_0_2,
-            self.percent_10,
-            self.percent_5,
-            self.percent_4,
-            self.percent_2,
-            self.percent_1,
-            self.percent_0_5,
-            self.percent_0_2,
-            self.percent_0_01,
-            self.percent_0_05,
-            self.percent_0_002,
-        ]
-        recurrance_intervals_filtered = list()
         duration_lengths = list()
-        for recurrance_interval in recurrance_intervals:
-            if recurrance_interval is not None:
-                if not isinstance(recurrance_interval, list):
-                    raise ValidationError(f"JSON field {recurrance_interval} is not a list.")
-                recurrance_intervals_filtered.append(recurrance_interval)
-                duration_lengths.append(len(recurrance_interval))
+        for label, frequency in self.frequencies_filtered.items():
+            duration_lengths.append(len(frequency))
 
         if len(set(duration_lengths)) > 1:
             raise ValidationError("All durations must be lists of the same length.")
+
+        # convert units if necessary
+        if self.original_units != self.MM and not self.conversion_complete:
+            for label, frequency in self.frequencies_filtered.items():
+                converted_frequency = [self.convert_to_mm(value) for value in frequency]
+                setattr(self, label, converted_frequency)
+            self.conversion_complete = True
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -133,6 +206,39 @@ class IDFTable(models.Model):
     @staticmethod
     def aep_from_ari(ari):
         return 100 * (1 - math.exp((-1/ari)))
+
+    def create_timeseries(self, duration_in_minutes, frequency, temporal_pattern, user=None):
+        depths = self.frequencies_filtered[frequency]
+        duration_index = self.durations_in_mins.index(duration_in_minutes)
+        total_depth_value = depths[duration_index]
+        timeseries_data = list()
+        timestep_in_seconds = 60 * (duration_in_minutes / len(temporal_pattern.pattern))
+
+        for index, relative_proportion in enumerate(temporal_pattern.pattern):
+            current_timestamp_python = datetime.fromtimestamp(index * timestep_in_seconds, pytz.UTC)
+            current_timestamp_iso8601 = current_timestamp_python.isoformat()
+            timeseries_data.append({
+                'ts': current_timestamp_iso8601,
+                'value': total_depth_value * relative_proportion
+            })
+
+        # Add the final timestamp to ensure we have a timeseries the same duration as duration_in_minutes
+        final_index = len(temporal_pattern.pattern)
+        current_timestamp_python = datetime.fromtimestamp(final_index * timestep_in_seconds, pytz.UTC)
+        current_timestamp_iso8601 = current_timestamp_python.isoformat()
+        timeseries_data.append({
+            'ts': current_timestamp_iso8601,
+            'value': total_depth_value * temporal_pattern.pattern[-1]
+        })
+
+        timeseries = TimeSeries.objects.create(
+            name=f"{self.location_name} - {frequency} - {duration_in_minutes} minutes",
+            data=timeseries_data,
+            created_by=user
+        )
+        return timeseries
+
+
 
     def __str__(self):
         return self.location_name
