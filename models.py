@@ -12,12 +12,18 @@ from django.contrib.postgres.indexes import GinIndex
 from datetime import datetime
 from django.core.files import File
 from io import BytesIO
+try:
+    from gn_anuga.models import Project
+except ImportError:
+    from dummy_models import DummyProject as Project
 
 User = get_user_model()
 
 
 class TimeSeries(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_created', verbose_name="Created by")
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
@@ -96,7 +102,9 @@ class IDFTable(models.Model):
         IN: 25.4,
     }
 
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_created', verbose_name="Created by")
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
@@ -129,6 +137,8 @@ class IDFTable(models.Model):
     saved_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm',)
     conversion_complete = models.BooleanField(default=False)
     chart = models.ImageField(upload_to='idftable/chart/', blank=True, null=True)
+    selected_durations = JSONField("Selected Durations", blank=True, null=True)
+    selected_frequencies = JSONField("Selected Frequencies", blank=True, null=True)
 
     def convert_to_mm(self, value):
         conversion_factor = self.UNIT_CONVERSIONS[self.original_units]
@@ -192,6 +202,22 @@ class IDFTable(models.Model):
                 setattr(self, label, converted_frequency)
             self.conversion_complete = True
 
+        if self.selected_durations:
+            if isinstance(self.selected_durations, list):
+                for duration in self.selected_durations:
+                    if duration not in self.durations_in_mins:
+                        raise ValidationError('Selected duration is not in available durations')
+            else:
+                raise ValidationError('Selected durations must be a list of integers')
+
+        if self.selected_frequencies:
+            if isinstance(self.selected_durations, list):
+                for frequency in self.selected_frequencies:
+                    if frequency not in self.frequencies_filtered:
+                        raise ValidationError('Selected frequency is not in available frequencies')
+            else:
+                raise ValidationError('Selected frequencies must be a list of strings')
+
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
@@ -248,7 +274,9 @@ class IDFTable(models.Model):
 
 
 class TemporalPattern(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_created', verbose_name="Created by")
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
