@@ -338,6 +338,18 @@ class TestIDFTableModel:
         assert pytest.approx(IDFTable.aep_from_ari(ari), 0.1) == expected_aep
 
     def test_create_timeseries_from_idftable(self):
+        expected_timeseries = [
+            {"ts": "1970-01-01T00:00:00+00:00", "value": 5.4864},
+            {"ts": "1970-01-01T00:07:30+00:00", "value": 1.09728},
+            {"ts": "1970-01-01T00:15:00+00:00", "value": 9.87552},
+            {"ts": "1970-01-01T00:22:30+00:00", "value": 18.653760000000002},
+            {"ts": "1970-01-01T00:30:00+00:00", "value": 6.0350399999999995},
+            {"ts": "1970-01-01T00:37:30+00:00", "value": 2.7432},
+            {"ts": "1970-01-01T00:45:00+00:00", "value": 6.583679999999999},
+            {"ts": "1970-01-01T00:52:30+00:00", "value": 4.38912},
+            {"ts": "1970-01-01T01:00:00+00:00", "value": 4.38912},
+        ]
+
         idf_table = IDFTable.objects.create(
             created_by=self.user,
             location_name='Test Location',
@@ -355,4 +367,5 @@ class TestIDFTableModel:
             source="Imaginary test data"
         )
         timeseries = idf_table.create_timeseries(duration, frequency, temporal_pattern, user=None)
-        assert timeseries
+        assert timeseries.data == expected_timeseries
+        assert timeseries.chart.size == 16949

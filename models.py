@@ -43,10 +43,10 @@ class TimeSeries(models.Model):
 
         if self.timezone not in pytz.all_timezones:
             raise ValidationError("The 'timezone' field must contain a valid timezone.")
+        self.create_chart()
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        self.create_chart()
         super().save(*args, **kwargs)
 
     @property
@@ -64,7 +64,6 @@ class TimeSeries(models.Model):
         timestamps = [item['ts'] for item in self.data]
         values = [item['value'] for item in self.data]
         plt.bar(timestamps, values)
-        plt.xticks(rotation=45)
         plt.tight_layout()  # Adjust layout to prevent cut-off
 
         # Save it to a BytesIO object
@@ -73,7 +72,7 @@ class TimeSeries(models.Model):
         file_buffer.seek(0)
 
         chart_image = File(file_buffer, name=filename)
-        self.chart.save(filename, chart_image)
+        self.chart.save(filename, chart_image, save=False)
 
     class Meta:
         indexes = [
