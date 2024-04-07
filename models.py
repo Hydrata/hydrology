@@ -15,7 +15,10 @@ from io import BytesIO
 try:
     from gn_anuga.models import Project
 except ImportError:
-    from dummy_models import DummyProject as Project
+    class Project(models.Model):
+
+        class Meta:
+            managed = False
 
 User = get_user_model()
 
