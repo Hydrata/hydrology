@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('gn_anuga', '0080_useragreement'),
         ('hydrology', '0009_auto_20240405_1052'),
     ]
 
