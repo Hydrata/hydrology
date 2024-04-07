@@ -13,12 +13,13 @@ from datetime import datetime
 from django.core.files import File
 from io import BytesIO
 try:
-    from gn_anuga.models import Project
+    from gn_anuga.models import Projecta
 except ImportError:
     class Project(models.Model):
 
         class Meta:
             managed = False
+            app_label = 'gn_anuga.project'
 
 User = get_user_model()
 
