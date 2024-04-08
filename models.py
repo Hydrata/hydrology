@@ -12,20 +12,11 @@ from django.contrib.postgres.indexes import GinIndex
 from datetime import datetime
 from django.core.files import File
 from io import BytesIO
-try:
-    from gn_anuga.models import Projecta
-except ImportError:
-    class Project(models.Model):
-
-        class Meta:
-            managed = False
-            app_label = 'gn_anuga.project'
 
 User = get_user_model()
 
 
 class TimeSeries(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_created', verbose_name="Created by")
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_updated', verbose_name="Updated by")
@@ -106,7 +97,6 @@ class IDFTable(models.Model):
         IN: 25.4,
     }
 
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_created', verbose_name="Created by")
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_updated', verbose_name="Updated by")
@@ -278,7 +268,6 @@ class IDFTable(models.Model):
 
 
 class TemporalPattern(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_created', verbose_name="Created by")
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_owner', verbose_name="Owner")
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_updated', verbose_name="Updated by")
