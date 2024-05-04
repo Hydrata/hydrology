@@ -369,3 +369,6 @@ class TestIDFTableModel:
         timeseries = idf_table.create_timeseries(duration, frequency, temporal_pattern, user=None)
         assert timeseries.data == expected_timeseries
         assert timeseries.chart.size >= 16949
+
+    def test_selected_frequencies_and_durations(self):
+        pass
