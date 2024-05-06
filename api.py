@@ -1,3 +1,4 @@
+from hydrology.models import IDFTable, TimeSeries, TemporalPattern
 from hydrology.serializers import IDFTableSerializer, TimeSeriesSerializer, TemporalPatternSerializer
 
 import logging
@@ -18,7 +19,7 @@ class IDFTableViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])
         project = Project.objects.get(id=project_id)
-        idf_tables = project.idf_tables.all()
+        idf_tables = IDFTable.objects.filter(project=project)
         return idf_tables
 
 
@@ -32,7 +33,7 @@ class TimeSeriesViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])
         project = Project.objects.get(id=project_id)
-        time_series = project.time_series.all()
+        time_series = TimeSeries.objects.filter(project=project)
         return time_series
 
 
@@ -46,5 +47,5 @@ class TemporalPatternViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])
         project = Project.objects.get(id=project_id)
-        temporal_patterns = project.temporal_patterns.all()
+        temporal_patterns = TemporalPattern.objects.filter(project=project)
         return temporal_patterns

@@ -13,6 +13,8 @@ from datetime import datetime
 from django.core.files import File
 from io import BytesIO
 
+from gn_anuga.models import Project
+
 User = get_user_model()
 
 
@@ -22,6 +24,7 @@ class TimeSeries(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='timeseries_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
     location_name = models.CharField(max_length=500, blank=True, null=True)
     source = models.CharField(max_length=500, blank=True, null=True)
@@ -102,6 +105,7 @@ class IDFTable(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     location_name = models.CharField(max_length=500)
     location_geom = PointField()
     source = models.CharField(max_length=500)
@@ -273,6 +277,7 @@ class TemporalPattern(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='temporal_pattern_updated', verbose_name="Updated by")
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
     source = models.CharField(max_length=500)
     notes = models.TextField(blank=True, null=True)
