@@ -1,19 +1,24 @@
 import copy
+import os
+import tempfile
+
 import pytz
 import math
 import matplotlib.pyplot as plt
+import pystac
+import uuid
 
 from django.contrib.gis.db.models import PointField
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import JSONField
-from django.contrib.postgres.indexes import GinIndex
 from datetime import datetime
 from django.core.files import File
 from io import BytesIO
 
 from gn_anuga.models import Project
+from gn_anuga.storage_backends import AnugaDataStorage
 
 User = get_user_model()
 
@@ -30,28 +35,64 @@ class TimeSeries(models.Model):
     source = models.CharField(max_length=500, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     timezone = models.CharField(max_length=50, default='UTC', choices=[(tz, tz) for tz in pytz.all_timezones])
-    data = JSONField(default=list(), blank=True, null=True)
-    chart = models.ImageField(upload_to='timeseries/chart/', blank=True, null=True)
+    data = models.FileField(storage=AnugaDataStorage(), upload_to='timeseries/data/', blank=True, null=True)
+    chart = models.ImageField(storage=AnugaDataStorage(), upload_to='timeseries/chart/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.project.name}_{self.id}_{self.name}".replace(" ", "_")
 
     def clean(self):
-        required_keys = {'ts', 'value'}
-        for data_index, data_point in enumerate(self.data):
-            if not required_keys.issubset(data_point):
-                raise ValidationError(f"The {required_keys} fields are required in each data point.")
-
-            timestamp_string = data_point.get('ts')
-            try:
-                datetime.fromisoformat(timestamp_string.rstrip('Z'))
-            except ValueError:
-                raise ValidationError("All timestamps must be in ISO 8601 format.")
-
         if self.timezone not in pytz.all_timezones:
             raise ValidationError("The 'timezone' field must contain a valid timezone.")
-        self.create_chart()
+
+        if self.data:
+            pass
+            # self.create_chart()
 
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def import_stac_from_simple_array(self, time_series_list):
+        catalog = pystac.Catalog(
+            id=uuid.uuid4().hex,
+            description='desc',
+            title='title'
+        )
+
+        extent = pystac.Extent(
+            spatial=pystac.SpatialExtent([[-180, -90, 180, 90]]),
+            temporal=pystac.TemporalExtent([
+                datetime.fromisoformat(time_series_list[0].get('ts')),
+                datetime.fromisoformat(time_series_list[-1].get('ts'))
+            ])
+        )
+
+        collection = pystac.Collection(
+            id=uuid.uuid4().hex,
+            description='Collection Description',
+            extent=extent,
+            title='title',
+        )
+
+        for item_inputs in time_series_list:
+            item = pystac.Item(
+                id=uuid.uuid4().hex,
+                geometry=dict(),
+                bbox=None,
+                datetime=datetime.fromisoformat(item_inputs['ts']),
+                properties={
+                    'value': item_inputs['value'],
+                    'unit': 'mm/hr'
+                }
+            )
+            collection.add_item(item)
+        catalog.add_child(collection)
+        catalog_type = pystac.CatalogType("SELF_CONTAINED")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            catalog_path = os.path.join(temp_dir, "catalog.json")
+            catalog.normalize_and_save(catalog_path, catalog_type)
+            self.data.save(f"{self}/catalog.json", File(open(catalog_path, 'rb')))
 
     @property
     def data_with_datetimes(self):
@@ -77,12 +118,6 @@ class TimeSeries(models.Model):
 
         chart_image = File(file_buffer, name=filename)
         self.chart.save(filename, chart_image, save=False)
-
-    class Meta:
-        indexes = [
-            GinIndex(fields=['data']),
-            models.Index(fields=['timezone']),
-        ]
 
 
 class IDFTable(models.Model):

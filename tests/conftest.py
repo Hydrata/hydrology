@@ -69,12 +69,13 @@ def create_time_series(create_user, create_simple_project):
         name='Valid Time Series',
         created_by=create_user,
         location_name="Test Location",
-        data=[
-            {'ts': '2022-06-01T00:00:00', 'value': 10},
-            {'ts': '2022-07-01T00:00:00', 'value': 20},
-            {'ts': '2022-08-01T00:00:00', 'value': 30}
-        ],
         source="Test Source",
         project=project
     )
+    data = [
+        {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
+        {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
+        {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
+    ]
+    time_series.import_stac_from_simple_array(data)
     return time_series

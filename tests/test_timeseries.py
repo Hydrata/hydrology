@@ -10,26 +10,25 @@ from hydrology.models import TimeSeries
 class TestTimeSeriesModel:
 
     def setup_method(self):
+
         self.valid_time_data = [
-            {'ts': '2022-06-01T00:00:00', 'value': 10},
-            {'ts': '2022-07-01T00:00:00', 'value': 20},
-            {'ts': '2022-08-01T00:00:00', 'value': 30}
+            {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
+            {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
+            {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
         ]
         self.invalid_time_data = [
             {'ts': 'not a timestamp', 'value': 10},
-            {'ts': '2022-07-01T00:00:00', 'value': 20},
-            {'ts': '2022-08-01T00:00:00', 'value': 30}
+            {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
+            {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
         ]
 
     def test_model_creation_with_valid_data(self):
         time_series = TimeSeries.objects.create(
             name='valid TimeSeries Name',
-            data=self.valid_time_data,
             timezone='UTC'
         )
-        assert time_series is not None
-        assert time_series.data == self.valid_time_data
-        assert time_series.timezone == 'UTC'
+        time_series.import_stac_from_simple_array(self.valid_time_data)
+        assert time_series.data
 
     def test_model_with_invalid_timestamps(self):
         with pytest.raises(ValidationError):

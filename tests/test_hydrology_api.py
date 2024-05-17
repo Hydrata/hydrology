@@ -108,9 +108,9 @@ class TestTimeSereiesViewSet:
         project = Project.objects.latest('id')
         response = api_client_with_project.post(f'/anuga/api/{project.id}/time-series/', {
             'data': [
-                {'ts': '2022-06-01T00:00:00', 'value': 10},
-                {'ts': '2022-07-01T00:00:00', 'value': 20},
-                {'ts': '2022-08-01T00:00:00', 'value': 30}
+                {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
+                {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
+                {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
             ],
             'name': 'Test Data',
             'source': 'Test Data'
@@ -127,9 +127,9 @@ class TestTimeSereiesViewSet:
 
     def test_update_time_series(self, api_client_with_project, create_time_series):
         updated_data = [
-                {'ts': '2022-06-01T00:00:00', 'value': 20},
-                {'ts': '2022-07-01T00:00:00', 'value': 40},
-                {'ts': '2022-08-01T00:00:00', 'value': 60}
+                {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 20},
+                {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 40},
+                {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 60}
             ]
         time_series = create_time_series
         project = Project.objects.latest('id')
