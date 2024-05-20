@@ -1,12 +1,27 @@
+import boto3
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
+from django.conf import settings
 from rest_framework.test import APIClient
 from gn_anuga.models import Project
 from hydrology.models import IDFTable, TemporalPattern, TimeSeries
 
 User = get_user_model()
 
+@pytest.fixture
+def s3():
+    session = boto3.Session(
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+    s3 = boto3.client('s3')
+    # paginator = s3.get_paginator('list_objects_v2')
+    # for page in paginator.paginate(Bucket='anuga-test-storage'):
+    #     if 'Contents' in page:
+    #         objects_to_delete = [{'Key': obj['Key']} for obj in page['Contents']]
+    #         s3.delete_objects(Bucket='anuga-test-storage', Delete={'Objects': objects_to_delete})
+    return s3
 
 @pytest.fixture
 def create_user(db):
@@ -69,13 +84,12 @@ def create_time_series(create_user, create_simple_project):
         name='Valid Time Series',
         created_by=create_user,
         location_name="Test Location",
+        data = [
+            {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
+            {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
+            {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
+        ],
         source="Test Source",
         project=project
     )
-    data = [
-        {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
-        {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
-        {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
-    ]
-    time_series.import_stac_from_simple_array(data)
     return time_series

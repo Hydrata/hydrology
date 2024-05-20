@@ -1,8 +1,11 @@
 import datetime
 import pytest
 import pytz
+import tempfile
 
+from PIL import Image
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from hydrology.models import TimeSeries
 
 
@@ -22,15 +25,21 @@ class TestTimeSeriesModel:
             {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
         ]
 
-    def test_model_creation_with_valid_data(self):
+    def test_time_series_creation_with_valid_data(self, s3):
         time_series = TimeSeries.objects.create(
             name='valid TimeSeries Name',
-            timezone='UTC'
+            timezone='UTC',
+            data=self.valid_time_data
         )
-        time_series.import_stac_from_simple_array(self.valid_time_data)
         assert time_series.data
+        with tempfile.NamedTemporaryFile() as chart_file:
+            s3.download_file(settings.ANUGA_S3_DATA_BUCKET_NAME, f"{time_series.chart}", chart_file.name)
+            with Image.open(chart_file.name) as img:
+                width, height = img.size
+                assert width > 10
+                assert height > 10
 
-    def test_model_with_invalid_timestamps(self):
+    def test_time_series_creation_with_invalid_timestamps(self):
         with pytest.raises(ValidationError):
             time_series = TimeSeries.objects.create(
                 name='valid TimeSeries Name',
@@ -38,7 +47,7 @@ class TestTimeSeriesModel:
                 timezone='UTC'
             )
 
-    def test_model_with_invalid_timezone(self):
+    def test_time_series_creation_with_invalid_timezone(self):
         with pytest.raises(ValidationError):
             time_series = TimeSeries.objects.create(
                 name='valid TimeSeries Name',
@@ -46,7 +55,7 @@ class TestTimeSeriesModel:
                 timezone='InvalidTimezone'
             )
 
-    def test_data_with_datetimes(self):
+    def test_time_series_data_with_datetimes(self):
         time_series = TimeSeries.objects.create(
             name='valid TimeSeries Name',
             data=self.valid_time_data,

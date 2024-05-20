@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 import tempfile
 
@@ -35,22 +36,41 @@ class TimeSeries(models.Model):
     source = models.CharField(max_length=500, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     timezone = models.CharField(max_length=50, default='UTC', choices=[(tz, tz) for tz in pytz.all_timezones])
-    data = models.FileField(storage=AnugaDataStorage(), upload_to='timeseries/data/', blank=True, null=True)
+    data = JSONField(default=list(), blank=True, null=True)
+    stac = models.FileField(storage=AnugaDataStorage(), upload_to='timeseries/stac/', blank=True, null=True)
     chart = models.ImageField(storage=AnugaDataStorage(), upload_to='timeseries/chart/', blank=True, null=True)
 
     def __str__(self):
-        return f"{self.project.name}_{self.id}_{self.name}".replace(" ", "_")
+        if self.project:
+            time_series_name = f"{self.project.name}_{self.id}_{self.name}".replace(" ", "_")
+        else:
+            time_series_name = f"None_{self.id}_{self.name}".replace(" ", "_")
+        return time_series_name
 
     def clean(self):
+        required_keys = {'ts', 'value'}
+        for data_index, data_point in enumerate(self.data):
+            if not required_keys.issubset(data_point):
+                raise ValidationError(f"The {required_keys} fields are required in each data point.")
+
+            timestamp_string = data_point.get('ts')
+            try:
+                datetime.fromisoformat(timestamp_string.rstrip('Z'))
+            except ValueError:
+                raise ValidationError("All timestamps must be in ISO 8601 format.")
+
+        if self.stac:
+            contents = self.stac.read().decode()
+            stac_dict = json.loads(contents)
+            catalog = pystac.Catalog.from_dict(stac_dict)
+            catalog.validate()
+
         if self.timezone not in pytz.all_timezones:
             raise ValidationError("The 'timezone' field must contain a valid timezone.")
 
-        if self.data:
-            pass
-            # self.create_chart()
-
     def save(self, *args, **kwargs):
         self.full_clean()
+        self.create_chart(save=False)
         super().save(*args, **kwargs)
 
     def import_stac_from_simple_array(self, time_series_list):
@@ -92,7 +112,7 @@ class TimeSeries(models.Model):
         with tempfile.TemporaryDirectory() as temp_dir:
             catalog_path = os.path.join(temp_dir, "catalog.json")
             catalog.normalize_and_save(catalog_path, catalog_type)
-            self.data.save(f"{self}/catalog.json", File(open(catalog_path, 'rb')))
+            self.stac.save(f"{self}/catalog.json", File(open(catalog_path, 'rb')))
 
     @property
     def data_with_datetimes(self):
@@ -104,7 +124,7 @@ class TimeSeries(models.Model):
             data_with_datetimes.append(data_point_copy)
         return data_with_datetimes
 
-    def create_chart(self):
+    def create_chart(self, save=True):
         filename = f'{self.name}.png'
         timestamps = [item['ts'] for item in self.data]
         values = [item['value'] for item in self.data]
@@ -115,9 +135,7 @@ class TimeSeries(models.Model):
         file_buffer = BytesIO()
         plt.savefig(file_buffer, format='png')
         file_buffer.seek(0)
-
-        chart_image = File(file_buffer, name=filename)
-        self.chart.save(filename, chart_image, save=False)
+        self.chart.save(filename, File(file_buffer, name=filename), save=save)
 
 
 class IDFTable(models.Model):
