@@ -152,6 +152,28 @@ class IDFTable(models.Model):
         CM: 10,
         IN: 25.4,
     }
+    FREQUENCY_FIELD_LABELS = [
+        'ey_12',
+        'ey_6',
+        'ey_4',
+        'ey_3',
+        'ey_2',
+        'ey_1',
+        'percent_50',
+        'ey_0_5',
+        'percent_20',
+        'ey_0_2',
+        'percent_10',
+        'percent_5',
+        'percent_4',
+        'percent_2',
+        'percent_1',
+        'percent_0_5',
+        'percent_0_2',
+        'percent_0_01',
+        'percent_0_05',
+        'percent_0_002',
+    ]
 
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_created', verbose_name="Created by")
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_owner', verbose_name="Owner")
@@ -159,7 +181,7 @@ class IDFTable(models.Model):
     created_at = models.DateTimeField("Created at", auto_now_add=True)
     updated_at = models.DateTimeField("Updated at", auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
-    location_name = models.CharField(max_length=500)
+    name = models.CharField(max_length=500)
     location_geom = PointField()
     source = models.CharField(max_length=500)
     notes = models.TextField(blank=True, null=True)
@@ -194,31 +216,10 @@ class IDFTable(models.Model):
     def convert_to_mm(self, value):
         conversion_factor = self.UNIT_CONVERSIONS[self.original_units]
         return value * conversion_factor
-    
+
     @property
     def frequency_field_labels(self):
-        return [
-            'ey_12',
-            'ey_6',
-            'ey_4',
-            'ey_3',
-            'ey_2',
-            'ey_1',
-            'percent_50',
-            'ey_0_5',
-            'percent_20',
-            'ey_0_2',
-            'percent_10',
-            'percent_5',
-            'percent_4',
-            'percent_2',
-            'percent_1',
-            'percent_0_5',
-            'percent_0_2',
-            'percent_0_01',
-            'percent_0_05',
-            'percent_0_002',
-        ]
+        return self.FREQUENCY_FIELD_LABELS
 
     @property
     def frequencies(self):
