@@ -25,9 +25,10 @@ class IDFTableSerializer(serializers.ModelSerializer):
             'selected_durations': 'list-of-numbers',
             'selected_frequencies': 'list-of-numbers'
         }
-        fields = [
-            'id'
-            ] + list(widgets.keys()) + IDFTable.FREQUENCY_FIELD_LABELS
+        # fields = [
+        #     'id'
+        #     ] + list(widgets.keys()) + IDFTable.FREQUENCY_FIELD_LABELS
+        fields = '__all__'
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

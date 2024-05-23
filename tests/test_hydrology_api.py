@@ -15,7 +15,7 @@ class TestIDFTableViewSet:
     def test_create_idftable(self, api_client_with_project, create_idf_table):
         project = Project.objects.latest('id')
         response = api_client_with_project.post(f'/anuga/api/{project.id}/idf-table/', {
-            'location_name': 'New Location',
+            'name': 'New Location',
             'location_geom': {
                 "type": "Point",
                 "coordinates": [
@@ -33,17 +33,17 @@ class TestIDFTableViewSet:
         project = Project.objects.latest('id')
         response = api_client_with_project.get(f'/anuga/api/{project.id}/idf-table/{idf_table.id}/')
         assert response.status_code == 200
-        assert response.data['location_name'] == 'Test Location'
+        assert response.data['name'] == 'Test Location'
 
     def test_update_idftable(self, api_client_with_project, create_idf_table):
         idf_table = create_idf_table
         project = Project.objects.latest('id')
         response = api_client_with_project.patch(f'/anuga/api/{project.id}/idf-table/{idf_table.pk}/', {
-            'location_name': 'Updated Location',
+            'name': 'Updated Location',
         }, format='json')
         assert response.status_code == 200
         updated_idf_table = IDFTable.objects.get(pk=idf_table.pk)
-        assert updated_idf_table.location_name == 'Updated Location'
+        assert updated_idf_table.name == 'Updated Location'
 
     def test_delete_idftable(self, api_client_with_project, create_idf_table):
         idf_table = create_idf_table

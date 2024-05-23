@@ -309,16 +309,14 @@ class IDFTable(models.Model):
         })
 
         timeseries = TimeSeries.objects.create(
-            name=f"{self.location_name} - {frequency} - {duration_in_minutes} minutes",
+            name=f"{self.name} - {frequency} - {duration_in_minutes} minutes",
             data=timeseries_data,
             created_by=user
         )
         return timeseries
 
-
-
     def __str__(self):
-        return self.location_name
+        return self.name
 
     class Meta:
         verbose_name = "IDF Table"

@@ -22,6 +22,11 @@ class IDFTableViewSet(viewsets.ModelViewSet):
         idf_tables = IDFTable.objects.filter(project=project)
         return idf_tables
 
+    def update(self, request, *args, **kwargs):
+        print('')
+        response = super().update(request, *args, **kwargs)
+        print('')
+        return response
 
 class TimeSeriesViewSet(viewsets.ModelViewSet):
     serializer_class = TimeSeriesSerializer
