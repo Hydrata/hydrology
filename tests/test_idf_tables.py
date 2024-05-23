@@ -267,7 +267,7 @@ class TestIDFTableModel:
     def test_valid_cumulative_data_in_inches(self):
         idf_table = IDFTable.objects.create(
             created_by=self.user,
-            location_name='Test Location',
+            name='Test Location',
             location_geom=Point(self.longitude, self.latitude),
             source='Test Source',
             notes='Test note',
@@ -279,7 +279,7 @@ class TestIDFTableModel:
     def test_valid_cumulative_data_in_millimeters(self):
         idf_table = IDFTable.objects.create(
             created_by=self.user,
-            location_name='Test Location',
+            name='Test Location',
             location_geom=Point(self.longitude, self.latitude),
             source='Test Source',
             notes='Test note',
@@ -296,7 +296,7 @@ class TestIDFTableModel:
         with pytest.raises(ValidationError):
             idf_table = IDFTable.objects.create(
                 created_by=self.user,
-                location_name='Invalid Test Location',
+                name='Invalid Test Location',
                 location_geom=Point(self.longitude, self.latitude),
                 source='Invalid Test Source',
                 notes='Invalid test note',
@@ -310,7 +310,7 @@ class TestIDFTableModel:
         with pytest.raises(ValidationError):
             idf_table = IDFTable.objects.create(
                 created_by=self.user,
-                location_name='Another Invalid Test Location',
+                name='Another Invalid Test Location',
                 location_geom=Point(self.longitude, self.latitude),
                 source='Another Invalid Test Source',
                 notes='Another invalid test note',
@@ -353,7 +353,7 @@ class TestIDFTableModel:
 
         idf_table = IDFTable.objects.create(
             created_by=self.user,
-            location_name='Test Location',
+            name='Test Location',
             location_geom=Point(self.longitude, self.latitude),
             source='Test Source',
             notes='Test note',

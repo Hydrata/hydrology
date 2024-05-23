@@ -13,8 +13,13 @@ class IDFTableViewSet(viewsets.ModelViewSet):
     serializer_class = IDFTableSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, owner=self.request.user)
+        project_id = int(self.kwargs['project_id'])
+        project = Project.objects.get(id=project_id)
+        serializer.save(project=project, created_by=self.request.user, owner=self.request.user)
 
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])
@@ -22,18 +27,17 @@ class IDFTableViewSet(viewsets.ModelViewSet):
         idf_tables = IDFTable.objects.filter(project=project)
         return idf_tables
 
-    def update(self, request, *args, **kwargs):
-        print('')
-        response = super().update(request, *args, **kwargs)
-        print('')
-        return response
-
 class TimeSeriesViewSet(viewsets.ModelViewSet):
     serializer_class = TimeSeriesSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, owner=self.request.user)
+        project_id = int(self.kwargs['project_id'])
+        project = Project.objects.get(id=project_id)
+        serializer.save(project=project, created_by=self.request.user, owner=self.request.user)
 
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])
@@ -46,8 +50,13 @@ class TemporalPatternViewSet(viewsets.ModelViewSet):
     serializer_class = TemporalPatternSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, owner=self.request.user)
+        project_id = int(self.kwargs['project_id'])
+        project = Project.objects.get(id=project_id)
+        serializer.save(project=project, created_by=self.request.user, owner=self.request.user)
 
     def get_queryset(self):
         project_id = int(self.kwargs['project_id'])

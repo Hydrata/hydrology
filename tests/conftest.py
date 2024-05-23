@@ -56,7 +56,7 @@ def create_idf_table(create_user, create_simple_project):
     project = create_simple_project
     idf_table = IDFTable.objects.create(
         created_by=create_user,
-        location_name="Test Location",
+        name="Test Location",
         location_geom=Point(30, 150),
         source="Test Source",
         project=project

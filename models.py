@@ -182,8 +182,8 @@ class IDFTable(models.Model):
     updated_at = models.DateTimeField("Updated at", auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
-    location_geom = PointField()
-    source = models.CharField(max_length=500)
+    location_geom = PointField(blank=True, null=True)
+    source = models.CharField(max_length=500, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     durations_in_mins = JSONField("Durations in Minutes", blank=True, null=True)
     ey_12 = JSONField("12EY", blank=True, null=True)
@@ -206,8 +206,8 @@ class IDFTable(models.Model):
     percent_0_01 = JSONField("0.01%", blank=True, null=True)  # 1000yr ARI
     percent_0_05 = JSONField("0.05%", blank=True, null=True)  # 2000yr ARI
     percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI,
-    original_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm',)
-    saved_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm',)
+    original_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm')
+    saved_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm')
     conversion_complete = models.BooleanField(default=False)
     chart = models.ImageField(upload_to='idftable/chart/', blank=True, null=True)
     selected_durations = JSONField("Selected Durations", blank=True, null=True)
@@ -331,12 +331,12 @@ class TemporalPattern(models.Model):
     updated_at = models.DateTimeField("Updated at", auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
-    source = models.CharField(max_length=500)
+    source = models.CharField(max_length=500, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     pattern = JSONField("Pattern", blank=True, null=True)
 
     def clean(self):
-        if not sum(self.pattern) == 1:
+        if self.pattern and not sum(self.pattern) == 1:
             raise ValidationError("The temporal pattern must sum to 1. For example: [0.3, 0.4, 0.3, 0.2]")
 
     def save(self, *args, **kwargs):
