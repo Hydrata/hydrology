@@ -32,9 +32,9 @@ class TimeSeries(models.Model):
     updated_at = models.DateTimeField("Updated at", auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
-    location_name = models.CharField(max_length=500, blank=True, null=True)
     source = models.CharField(max_length=500, blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    location_name = models.CharField(max_length=500, blank=True, null=True)
     timezone = models.CharField(max_length=50, default='UTC', choices=[(tz, tz) for tz in pytz.all_timezones])
     data = JSONField(default=list(), blank=True, null=True)
     stac = models.FileField(storage=AnugaDataStorage(), upload_to='timeseries/stac/', blank=True, null=True)
@@ -174,6 +174,18 @@ class IDFTable(models.Model):
         'percent_0_05',
         'percent_0_002',
     ]
+    TEMPLATE = [
+        {
+            "duration": "5",
+            "50%": None,
+            "20%": None,
+            "10%": None,
+            "4%": None,
+            "2%": None,
+            "1%": None,
+            "0.5%": None
+        }
+    ]
 
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_created', verbose_name="Created by")
     owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='idf_table_owner', verbose_name="Owner")
@@ -182,34 +194,35 @@ class IDFTable(models.Model):
     updated_at = models.DateTimeField("Updated at", auto_now=True)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
-    location_geom = PointField(blank=True, null=True)
     source = models.CharField(max_length=500, blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
-    durations_in_mins = JSONField("Durations in Minutes", blank=True, null=True)
-    ey_12 = JSONField("12EY", blank=True, null=True)
-    ey_6 = JSONField("6EY", blank=True, null=True)  # 0.17yr ARI
-    ey_4 = JSONField("4EY", blank=True, null=True)  # 0.25yr ARI
-    ey_3 = JSONField("3EY", blank=True, null=True)  # 0.33yr ARI
-    ey_2 = JSONField("2EY", blank=True, null=True)  # 0.5yr ARI
-    ey_1 = JSONField("1EY", blank=True, null=True)  # 1yr ARI
-    percent_50 = JSONField("50%", blank=True, null=True)  # 1.44yr ARI
-    ey_0_5 = JSONField("0.5EY", blank=True, null=True)  # 2yr ARI
-    percent_20 = JSONField("20%", blank=True, null=True)  # 4.48 yr ARI
-    ey_0_2 = JSONField("0.2EY", blank=True, null=True)  # 5yr ARI
-    percent_10 = JSONField("10%", blank=True, null=True)  # 10yr ARI
-    percent_5 = JSONField("5%", blank=True, null=True)  # 20yr ARI
-    percent_4 = JSONField("4%", blank=True, null=True)  # 25yr ARI
-    percent_2 = JSONField("2%", blank=True, null=True)  # 50yr ARI
-    percent_1 = JSONField("1%", blank=True, null=True)  # 100yr ARI
-    percent_0_5 = JSONField("0.5%", blank=True, null=True)  # 200yr ARI
-    percent_0_2 = JSONField("0.2%", blank=True, null=True)  # 500yr ARI
-    percent_0_01 = JSONField("0.01%", blank=True, null=True)  # 1000yr ARI
-    percent_0_05 = JSONField("0.05%", blank=True, null=True)  # 2000yr ARI
-    percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI,
+    description = models.TextField(blank=True, null=True)
+    location_geom = PointField(blank=True, null=True)
+    data = JSONField(default=list(), blank=True, null=True)
+    # durations_in_mins = JSONField("Durations in Minutes", blank=True, null=True)
+    # ey_12 = JSONField("12EY", blank=True, null=True)
+    # ey_6 = JSONField("6EY", blank=True, null=True)  # 0.17yr ARI
+    # ey_4 = JSONField("4EY", blank=True, null=True)  # 0.25yr ARI
+    # ey_3 = JSONField("3EY", blank=True, null=True)  # 0.33yr ARI
+    # ey_2 = JSONField("2EY", blank=True, null=True)  # 0.5yr ARI
+    # ey_1 = JSONField("1EY", blank=True, null=True)  # 1yr ARI
+    # percent_50 = JSONField("50%", blank=True, null=True)  # 1.44yr ARI
+    # ey_0_5 = JSONField("0.5EY", blank=True, null=True)  # 2yr ARI
+    # percent_20 = JSONField("20%", blank=True, null=True)  # 4.48 yr ARI
+    # ey_0_2 = JSONField("0.2EY", blank=True, null=True)  # 5yr ARI
+    # percent_10 = JSONField("10%", blank=True, null=True)  # 10yr ARI
+    # percent_5 = JSONField("5%", blank=True, null=True)  # 20yr ARI
+    # percent_4 = JSONField("4%", blank=True, null=True)  # 25yr ARI
+    # percent_2 = JSONField("2%", blank=True, null=True)  # 50yr ARI
+    # percent_1 = JSONField("1%", blank=True, null=True)  # 100yr ARI
+    # percent_0_5 = JSONField("0.5%", blank=True, null=True)  # 200yr ARI
+    # percent_0_2 = JSONField("0.2%", blank=True, null=True)  # 500yr ARI
+    # percent_0_01 = JSONField("0.01%", blank=True, null=True)  # 1000yr ARI
+    # percent_0_05 = JSONField("0.05%", blank=True, null=True)  # 2000yr ARI
+    # percent_0_002 = JSONField("0.02%", blank=True, null=True)  # 5000yr ARI,
     original_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm')
     saved_units = models.CharField(max_length=4, choices=UNIT_CHOICES, default='mm')
     conversion_complete = models.BooleanField(default=False)
-    chart = models.ImageField(upload_to='idftable/chart/', blank=True, null=True)
+    # chart = models.ImageField(upload_to='idftable/chart/', blank=True, null=True)
     selected_durations = JSONField("Selected Durations", blank=True, null=True)
     selected_frequencies = JSONField("Selected Frequencies", blank=True, null=True)
 
@@ -240,19 +253,19 @@ class IDFTable(models.Model):
         return frequencies_filtered
 
     def clean(self):
-        duration_lengths = list()
-        for label, frequency in self.frequencies_filtered.items():
-            duration_lengths.append(len(frequency))
-
-        if len(set(duration_lengths)) > 1:
-            raise ValidationError("All durations must be lists of the same length.")
-
-        # convert units if necessary
-        if self.original_units != self.MM and not self.conversion_complete:
-            for label, frequency in self.frequencies_filtered.items():
-                converted_frequency = [self.convert_to_mm(value) for value in frequency]
-                setattr(self, label, converted_frequency)
-            self.conversion_complete = True
+        # duration_lengths = list()
+        # for label, frequency in self.frequencies_filtered.items():
+        #     duration_lengths.append(len(frequency))
+        #
+        # if len(set(duration_lengths)) > 1:
+        #     raise ValidationError("All durations must be lists of the same length.")
+        #
+        # # convert units if necessary
+        # if self.original_units != self.MM and not self.conversion_complete:
+        #     for label, frequency in self.frequencies_filtered.items():
+        #         converted_frequency = [self.convert_to_mm(value) for value in frequency]
+        #         setattr(self, label, converted_frequency)
+        #     self.conversion_complete = True
 
         if self.selected_durations:
             if isinstance(self.selected_durations, list):
@@ -332,7 +345,7 @@ class TemporalPattern(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=500)
     source = models.CharField(max_length=500, blank=True, null=True)
-    notes = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     pattern = JSONField("Pattern", blank=True, null=True)
 
     def clean(self):
