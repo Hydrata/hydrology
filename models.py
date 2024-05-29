@@ -243,8 +243,10 @@ class TemporalPattern(models.Model):
     data = JSONField("Pattern", blank=True, null=True)
 
     def clean(self):
-        if self.data and not sum(self.data) == 1:
-            raise ValidationError("The temporal pattern must sum to 1. For example: [0.3, 0.4, 0.3, 0.2]")
+        if self.data:
+            rowData = self.data.get('rowData')
+            if sum(int(d['percentage']) for d in rowData) != 100:
+                raise ValidationError("The temporal pattern must sum to 100. For example: [30, 40, 30, 20]")
 
     def save(self, *args, **kwargs):
         self.full_clean()
