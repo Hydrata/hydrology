@@ -48,12 +48,12 @@ class TimeSeries(models.Model):
         return time_series_name
 
     def clean(self):
-        required_keys = {'ts', 'value'}
-        for data_index, data_point in enumerate(self.data):
+        required_keys = {'timestamp', 'value'}
+        for data_index, data_point in enumerate(self.data.get('rowData')):
             if not required_keys.issubset(data_point):
                 raise ValidationError(f"The {required_keys} fields are required in each data point.")
 
-            timestamp_string = data_point.get('ts')
+            timestamp_string = data_point.get('timestamp')
             try:
                 datetime.fromisoformat(timestamp_string.rstrip('Z'))
             except ValueError:
@@ -83,8 +83,8 @@ class TimeSeries(models.Model):
         extent = pystac.Extent(
             spatial=pystac.SpatialExtent([[-180, -90, 180, 90]]),
             temporal=pystac.TemporalExtent([
-                datetime.fromisoformat(time_series_list[0].get('ts')),
-                datetime.fromisoformat(time_series_list[-1].get('ts'))
+                datetime.fromisoformat(time_series_list[0].get('timestamp')),
+                datetime.fromisoformat(time_series_list[-1].get('timestamp'))
             ])
         )
 
@@ -100,7 +100,7 @@ class TimeSeries(models.Model):
                 id=uuid.uuid4().hex,
                 geometry=dict(),
                 bbox=None,
-                datetime=datetime.fromisoformat(item_inputs['ts']),
+                datetime=datetime.fromisoformat(item_inputs['timestamp']),
                 properties={
                     'value': item_inputs['value'],
                     'unit': 'mm/hr'
@@ -118,16 +118,16 @@ class TimeSeries(models.Model):
     def data_with_datetimes(self):
         data_with_datetimes = []
         tz = pytz.timezone(self.timezone)
-        for data_point in self.data:
+        for data_point in self.data.get('rowData'):
             data_point_copy = data_point.copy()
-            data_point_copy['ts'] = datetime.fromisoformat(data_point['ts'].rstrip('Z')).replace(tzinfo=tz)
+            data_point_copy['timestamp'] = datetime.fromisoformat(data_point['timestamp'].rstrip('Z')).replace(tzinfo=tz)
             data_with_datetimes.append(data_point_copy)
         return data_with_datetimes
 
     def create_chart(self, save=True):
         filename = f'{self.name}.png'
-        timestamps = [item['ts'] for item in self.data]
-        values = [item['value'] for item in self.data]
+        timestamps = [item['timestamp'] for item in self.data.get('rowData')]
+        values = [str(item['value']) for item in self.data.get('rowData')]
         plt.bar(timestamps, values)
         plt.tight_layout()  # Adjust layout to prevent cut-off
 
