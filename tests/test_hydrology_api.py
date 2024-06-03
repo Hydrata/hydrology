@@ -23,7 +23,11 @@ class TestIDFTableViewSet:
                     39.57422
                 ]
             },
-            'source': 'Test Data'
+            'source': 'Test Data',
+            'data': {
+                "columnDefs": list(),
+                "rowData": list()
+            }
         }, format='json')
         assert response.status_code == 201
         assert IDFTable.objects.count() == 2  # Assuming one was already created in setup
@@ -107,11 +111,10 @@ class TestTimeSereiesViewSet:
     def test_create_time_series(self, api_client_with_project, create_time_series):
         project = Project.objects.latest('id')
         response = api_client_with_project.post(f'/anuga/api/{project.id}/time-series/', {
-            'data': [
-                {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
-                {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
-                {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
-            ],
+            'data': {
+                "columnDefs": [],
+                "rowData": []
+            },
             'name': 'Test Data',
             'source': 'Test Data'
         }, format='json')
@@ -126,11 +129,10 @@ class TestTimeSereiesViewSet:
         assert response.data['name'] == 'Valid Time Series'
 
     def test_update_time_series(self, api_client_with_project, create_time_series):
-        updated_data = [
-                {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 20},
-                {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 40},
-                {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 60}
-            ]
+        updated_data = {
+                "columnDefs": list(),
+                "rowData": list()
+            },
         time_series = create_time_series
         project = Project.objects.latest('id')
         response = api_client_with_project.patch(f'/anuga/api/{project.id}/time-series/{time_series.pk}/', {

@@ -59,7 +59,11 @@ def create_idf_table(create_user, create_simple_project):
         name="Test Location",
         location_geom=Point(30, 150),
         source="Test Source",
-        project=project
+        project=project,
+        data={
+            "columnDefs": list(),
+            "rowData": list()
+        }
     )
     return idf_table
 
@@ -70,9 +74,9 @@ def create_temporal_pattern(create_user, create_simple_project):
     temporal_pattern = TemporalPattern.objects.create(
         created_by=create_user,
         name="Valid Test Pattern",
-        pattern=[0.1, 0.2, 0.45, 0.25],
         source="Test Source",
-        project=project
+        project=project,
+        data=[30, 40, 30, 20]
     )
     return temporal_pattern
 
@@ -84,11 +88,10 @@ def create_time_series(create_user, create_simple_project):
         name='Valid Time Series',
         created_by=create_user,
         location_name="Test Location",
-        data = [
-            {'ts': '2022-06-01T00:00:00Z+00:00', 'value': 10},
-            {'ts': '2022-07-01T00:00:00Z+00:00', 'value': 20},
-            {'ts': '2022-08-01T00:00:00Z+00:00', 'value': 30}
-        ],
+        data={
+            "columnDefs": list(),
+            "rowData": list()
+        },
         source="Test Source",
         project=project
     )
