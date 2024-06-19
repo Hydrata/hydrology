@@ -69,7 +69,10 @@ class TestTemporalPatternViewSet:
         project = Project.objects.latest('id')
         response = api_client_with_project.post(f'/anuga/api/{project.id}/temporal-pattern/', {
             'name': "Valid Test Pattern",
-            'pattern': [0.1, 0.2, 0.45, 0.25],
+            'data': {
+                "columnDefs": list(),
+                "rowData": [30, 40, 20, 10]
+            },
             'source': "Test Source"
         }, format='json')
         assert response.status_code == 201
@@ -132,12 +135,16 @@ class TestTimeSereiesViewSet:
         updated_data = {
                 "columnDefs": list(),
                 "rowData": list()
-            },
+            }
         time_series = create_time_series
         project = Project.objects.latest('id')
         response = api_client_with_project.patch(f'/anuga/api/{project.id}/time-series/{time_series.pk}/', {
+            'data': {
+                "columnDefs": [],
+                "rowData": []
+            },
             'name': 'Updated Name',
-            'data': updated_data
+            'source': 'Test Data'
         }, format='json')
         assert response.status_code == 200
         updated_time_series = TimeSeries.objects.get(pk=time_series.pk)

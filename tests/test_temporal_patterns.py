@@ -10,10 +10,13 @@ User = get_user_model()
 class TestTemporalPattern:
 
     def setup_method(self):
-        self.valid_pattern = [0.5, 0.5]
+        self.valid_pattern = {
+            "columnDefs": list(),
+            "rowData": [30, 40, 20, 10]
+        }
         self.user = User.objects.create(username='test_user')
         self.temporal_pattern = TemporalPattern.objects.create(
-            pattern=self.valid_pattern,
+            data=self.valid_pattern,
             name="TestPattern",
             source="Imaginary test data"
         )
@@ -23,15 +26,15 @@ class TestTemporalPattern:
         assert self.temporal_pattern.pattern == self.valid_pattern
 
     def test_save_invalid_model_not_sum_one(self):
-        test_pattern = [0.3, 0.5]
-        self.temporal_pattern.pattern = test_pattern
+        test_pattern = [30, 50]
+        self.temporal_pattern.data["rowData"] = test_pattern
 
         with pytest.raises(ValidationError):
             self.temporal_pattern.save()
 
     def test_save_invalid_pattern_not_floats(self):
         test_pattern = ["a string", 0.5]
-        self.temporal_pattern.pattern = test_pattern
+        self.temporal_pattern.data["rowData"] = test_pattern
 
         with pytest.raises(TypeError):
             self.temporal_pattern.save()

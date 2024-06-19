@@ -49,11 +49,11 @@ class TimeSeries(models.Model):
 
     def clean(self):
         required_keys = {'timestamp', 'value'}
-        for data_index, data_point in enumerate(self.data.get('rowData')):
-            if not required_keys.issubset(data_point):
+        for row_index, row in enumerate(self.data.get('rowData')):
+            if not required_keys.issubset(row.keys()):
                 raise ValidationError(f"The {required_keys} fields are required in each data point.")
 
-            timestamp_string = data_point.get('timestamp')
+            timestamp_string = row.get('timestamp')
             try:
                 datetime.fromisoformat(timestamp_string.rstrip('Z'))
             except ValueError:
@@ -170,15 +170,35 @@ class IDFTable(models.Model):
     selected_durations = JSONField("Selected Durations", blank=True, null=True)
     selected_frequencies = JSONField("Selected Frequencies", blank=True, null=True)
 
-    def convert_to_mm(self, value):
-        conversion_factor = self.UNIT_CONVERSIONS[self.original_units]
-        return value * conversion_factor
+    def convert_to_mm(self):
+        print('converting')
+        for row in self.data.get('rowData'):
+            for key in row:
+                if "ARI" in key:
+                    row[key] *= 1 # self.UNIT_CONVERSIONS[self.original_units]
+        self.conversion_complete = True
+        if self.id:
+            self.save(update_fields=['data', 'conversion_complete'])
 
     def clean(self):
-        pass
+        if not isinstance(self.data, dict):
+            raise ValidationError("Not a dictionary.")
+
+        if not set(self.data.keys()).issuperset({"columnDefs", "rowData"}):
+            raise ValidationError("Missing key(s) columnDefs and/or rowData")
+
+        for i, column in enumerate(self.data.get('columnDefs')):
+            if not isinstance(column, dict):
+                raise ValidationError(f"columnDefs element at index {i} is not a dictionary.")
+
+        for i, row in enumerate(self.data.get('rowData')):
+            if not isinstance(row, dict):
+                raise ValidationError(f"rowData element at index {i} is not a dict.")
 
     def save(self, *args, **kwargs):
         self.full_clean()
+        if self.original_units != 'mm' and not self.conversion_complete:
+            self.convert_to_mm()
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -192,13 +212,14 @@ class IDFTable(models.Model):
         return 100 * (1 - math.exp((-1/ari)))
 
     def create_timeseries(self, duration_in_minutes, frequency, temporal_pattern, user=None):
-        depths = self.frequencies_filtered[frequency]
-        duration_index = self.durations_in_mins.index(duration_in_minutes)
-        total_depth_value = depths[duration_index]
+        intensities = next((row for row in self.data.get('rowData') if row.get('duration') == duration_in_minutes), None)
+        intensity = intensities.get(frequency, None)
+        total_depth_value = intensity * duration_in_minutes / 60
         timeseries_data = list()
-        timestep_in_seconds = 60 * (duration_in_minutes / len(temporal_pattern.pattern))
+        temporal_pattern = temporal_pattern.data.get('rowData')
+        timestep_in_seconds = 60 * (duration_in_minutes / len(temporal_pattern))
 
-        for index, relative_proportion in enumerate(temporal_pattern.pattern):
+        for index, relative_proportion in enumerate(temporal_pattern):
             current_timestamp_python = datetime.fromtimestamp(index * timestep_in_seconds, pytz.UTC)
             current_timestamp_iso8601 = current_timestamp_python.isoformat()
             timeseries_data.append({
@@ -207,12 +228,12 @@ class IDFTable(models.Model):
             })
 
         # Add the final timestamp to ensure we have a timeseries the same duration as duration_in_minutes
-        final_index = len(temporal_pattern.pattern)
+        final_index = len(temporal_pattern)
         current_timestamp_python = datetime.fromtimestamp(final_index * timestep_in_seconds, pytz.UTC)
         current_timestamp_iso8601 = current_timestamp_python.isoformat()
         timeseries_data.append({
             'ts': current_timestamp_iso8601,
-            'value': total_depth_value * temporal_pattern.pattern[-1]
+            'value': total_depth_value * temporal_pattern[-1]
         })
 
         timeseries = TimeSeries.objects.create(
@@ -244,9 +265,11 @@ class TemporalPattern(models.Model):
 
     def clean(self):
         if self.data:
-            rowData = self.data.get('rowData')
-            if sum(int(d['percentage']) for d in rowData) != 100:
-                raise ValidationError("The temporal pattern must sum to 100. For example: [30, 40, 30, 20]")
+            row_data = self.data.get('rowData')
+            if row_data:
+                total_percentage = sum(d['percentage'] for d in row_data)
+                if total_percentage != 100:
+                    raise ValidationError("The sum of percentage values in the temporal pattern must sum to 100. For example: [30, 40, 30, 20]")
 
     def save(self, *args, **kwargs):
         self.full_clean()

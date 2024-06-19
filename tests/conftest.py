@@ -76,7 +76,10 @@ def create_temporal_pattern(create_user, create_simple_project):
         name="Valid Test Pattern",
         source="Test Source",
         project=project,
-        data=[30, 40, 30, 20]
+        data={
+            "columnDefs": list(),
+            "rowData": [30, 40, 20, 10]
+        }
     )
     return temporal_pattern
 

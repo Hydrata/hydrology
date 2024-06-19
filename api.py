@@ -45,6 +45,10 @@ class TimeSeriesViewSet(viewsets.ModelViewSet):
         time_series = TimeSeries.objects.filter(project=project)
         return time_series
 
+from django.core.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.response import Response
+
 
 class TemporalPatternViewSet(viewsets.ModelViewSet):
     serializer_class = TemporalPatternSerializer
