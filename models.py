@@ -54,8 +54,12 @@ class TimeSeries(models.Model):
                 raise ValidationError(f"The {required_keys} fields are required in each data point.")
 
             timestamp_string = row.get('timestamp')
+            if timestamp_string.endswith('Z'):
+                timestamp_string = timestamp_string.rstrip('Z')
+                row['timestamp'] = timestamp_string
+
             try:
-                datetime.fromisoformat(timestamp_string.rstrip('Z'))
+                datetime.fromisoformat(timestamp_string)
             except ValueError:
                 raise ValidationError("All timestamps must be in ISO 8601 format.")
 
