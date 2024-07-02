@@ -59,7 +59,9 @@ class TimeSeries(models.Model):
                 row['timestamp'] = timestamp_string
 
             try:
-                datetime.fromisoformat(timestamp_string)
+                date_object = datetime.fromisoformat(timestamp_string)
+                row['timestamp'] = date_object.isoformat()
+                row['value'] = float(row.get('value'))
             except ValueError:
                 raise ValidationError("All timestamps must be in ISO 8601 format.")
 
